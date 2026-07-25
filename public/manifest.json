@@ -1,0 +1,51 @@
+{
+  "name": "SIGAP SECURITY",
+  "short_name": "SIGAP",
+  "description": "SIGAP SECURITY",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#e3e4e6",
+  "theme_color": "#e3e4e6",
+  "icons": [
+    {
+      "src": "/sigap.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/sigap.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/sigap.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "/sigap.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "/sigap.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "/sigap.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/sigap.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/sigap.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    }
+  ]
+}
