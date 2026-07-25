@@ -12,12 +12,29 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('nomor_anggota', 20)->nullable();
-            $table->string('nik', 20)->nullable();
-            $table->string('jabatan', 100)->nullable();
-            $table->string('unit_kerja', 100)->nullable();
-            $table->date('tanggal_masuk')->nullable();
-            $table->enum('status', ['aktif', 'nonaktif'])->nullable();
+            if (!Schema::hasColumn('users', 'nomor_anggota')) {
+                $table->string('nomor_anggota', 20)->nullable();
+            }
+
+            if (!Schema::hasColumn('users', 'nik')) {
+                $table->string('nik', 20)->nullable();
+            }
+
+            if (!Schema::hasColumn('users', 'jabatan')) {
+                $table->string('jabatan', 100)->nullable();
+            }
+
+            if (!Schema::hasColumn('users', 'unit_kerja')) {
+                $table->string('unit_kerja', 100)->nullable();
+            }
+
+            if (!Schema::hasColumn('users', 'tanggal_masuk')) {
+                $table->date('tanggal_masuk')->nullable();
+            }
+
+            if (!Schema::hasColumn('users', 'status')) {
+                $table->enum('status', ['aktif', 'nonaktif'])->nullable();
+            }
         });
     }
 
@@ -26,8 +43,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['nomor_anggota', 'nomor', 'nik', 'jabatan', 'unit_kerja','tanggal_masuk','status']);
-        });
+        foreach (['nomor_anggota', 'nik', 'jabatan', 'unit_kerja', 'tanggal_masuk', 'status'] as $column) {
+            if (Schema::hasColumn('users', $column)) {
+                Schema::table('users', function (Blueprint $table) use ($column) {
+                    $table->dropColumn($column);
+                });
+            }
+        }
     }
 };
