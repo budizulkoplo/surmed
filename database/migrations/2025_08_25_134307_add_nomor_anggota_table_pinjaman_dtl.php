@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('pinjaman_dtl') || Schema::hasColumn('pinjaman_dtl', 'nomor_anggota')) {
+            return;
+        }
+
         Schema::table('pinjaman_dtl', function (Blueprint $table) {
             $table->string('nomor_anggota')->after('id_pinjaman');
         });
@@ -21,6 +25,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (!Schema::hasTable('pinjaman_dtl') || !Schema::hasColumn('pinjaman_dtl', 'nomor_anggota')) {
+            return;
+        }
+
         Schema::table('pinjaman_dtl', function (Blueprint $table) {
             $table->dropColumn('nomor_anggota');
         });
