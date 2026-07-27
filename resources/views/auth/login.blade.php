@@ -42,7 +42,6 @@
     <script>
       document.documentElement.setAttribute('data-bs-theme', 'light');
       document.body.removeAttribute('data-bs-theme');
-      localStorage.removeItem('theme');
       localStorage.removeItem('tablerTheme');
     </script>
     <div class="page page-center">

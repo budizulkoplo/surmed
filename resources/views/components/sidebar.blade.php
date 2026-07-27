@@ -1,4 +1,4 @@
-<aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="light">
+<aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
     <!-- Sidebar Brand -->
     @php
         use App\Models\Setting;
@@ -64,7 +64,7 @@
                 
             </div>
             <div class="info">
-                <a href="#" class="d-block text-body">{{ $displayName }}</a>
+                <a href="#" class="d-block text-white">{{ $displayName }}</a>
 
                 <span class="d-flex align-items-center gap-1 text-warning text-decoration-none"
                     style="font-size: 0.75rem; line-height: 1rem;">
