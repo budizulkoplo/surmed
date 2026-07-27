@@ -34,7 +34,7 @@
             @endphp
             <div id="user-role">{{ $setting->nama_perusahaan ?? 'Perusahaan' }}</div>
             <h3>{{ $user->name ?? 'Nama User' }}</h3>
-            <div id="user-role">Klinik Surya Medika</div>
+            <div id="user-role">{{ $user->jabatan ?? 'Jabatan' }}</div>
         </div>
     </div>
 </div>
