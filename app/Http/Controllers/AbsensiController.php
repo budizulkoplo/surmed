@@ -85,8 +85,8 @@ class AbsensiController extends Controller
 
                 // ambil jam masuk & pulang dari tabel kelompokjam
                 $jam = KelompokJam::firstWhere('shift', $shift);
-                $jammasuk = $jam->jammasuk ?? null;
-                $jampulang = $jam->jampulang ?? null;
+                $jammasuk = $jam ? $jam->jamMasukForDate($tgl) : null;
+                $jampulang = $jam ? $jam->jamPulangForDate($tgl) : null;
 
                 $absenForDate = $presensiCollection->get($tgl) ?? collect();
 

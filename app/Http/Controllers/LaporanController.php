@@ -73,7 +73,7 @@ class LaporanController extends Controller
                 $jadwalRow = $jadwalCollection->get($tgl);
                 $shift = $jadwalRow->shift ?? null;
                 $jam = $shift ? $kelompokJam->get($shift) : null;
-                $jammasuk = $jam->jammasuk ?? null;
+                $jammasuk = $jam ? $jam->jamMasukForDate($tgl) : null;
 
                 $absensiHari = $presensiCollection->get($tgl) ?? collect();
                 $in = optional($absensiHari->firstWhere('inoutmode', 1))->jam_in;

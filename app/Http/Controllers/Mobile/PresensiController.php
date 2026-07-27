@@ -561,7 +561,7 @@ class PresensiController extends BaseMobileController
             ->whereRaw('LOWER(shift) <> ?', ['libur'])
             ->get()
             ->first(function ($shift) use ($tanggal, $targetColumn, $attendanceTime) {
-                $targetJam = $shift->{$targetColumn} ?? null;
+                $targetJam = KelompokJam::timeForDate($shift, $targetColumn, $tanggal);
                 if (!$targetJam) {
                     return false;
                 }
@@ -574,11 +574,19 @@ class PresensiController extends BaseMobileController
                 }
 
                 foreach ($candidateDates as $shiftDate) {
-                    $targetTime = Carbon::parse("$shiftDate $targetJam");
+                    $shiftJamMasuk = $shift->jamMasukForDate($shiftDate);
+                    $shiftJamPulang = $shift->jamPulangForDate($shiftDate);
+                    $targetJamForDate = KelompokJam::timeForDate($shift, $targetColumn, $shiftDate);
 
-                    if ($targetColumn === 'jampulang' && $shift->jammasuk && $shift->jampulang) {
-                        $start = Carbon::parse("$shiftDate {$shift->jammasuk}");
-                        $end = Carbon::parse("$shiftDate {$shift->jampulang}");
+                    if (!$targetJamForDate) {
+                        continue;
+                    }
+
+                    $targetTime = Carbon::parse("$shiftDate $targetJamForDate");
+
+                    if ($targetColumn === 'jampulang' && $shiftJamMasuk && $shiftJamPulang) {
+                        $start = Carbon::parse("$shiftDate $shiftJamMasuk");
+                        $end = Carbon::parse("$shiftDate $shiftJamPulang");
                         if ($end->lt($start)) {
                             $targetTime->addDay();
                         }

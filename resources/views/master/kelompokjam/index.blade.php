@@ -21,8 +21,10 @@
                             <tr>
                                 <th>No</th>
                                 <th>Shift</th>
-                                <th>Jam Masuk</th>
-                                <th>Jam Pulang</th>
+                                <th>Masuk Sen-Jum</th>
+                                <th>Pulang Sen-Jum</th>
+                                <th>Masuk Sabtu</th>
+                                <th>Pulang Sabtu</th>
                                 <th>Toleransi</th>
                                 <th>Aksi</th>
                             </tr>
@@ -49,13 +51,23 @@
                             <label class="form-label">Shift</label>
                             <input type="text" class="form-control" name="shift" required>
                         </div>
-                        <div class="mb-2">
-                            <label class="form-label">Jam Masuk</label>
-                            <input type="time" class="form-control" name="jammasuk" required>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Jam Pulang</label>
-                            <input type="time" class="form-control" name="jampulang" required>
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Masuk Senin-Jumat</label>
+                                <input type="time" class="form-control" name="jammasuk" required>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Pulang Senin-Jumat</label>
+                                <input type="time" class="form-control" name="jampulang" required>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Masuk Sabtu</label>
+                                <input type="time" class="form-control" name="jammasuk_sabtu">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Pulang Sabtu</label>
+                                <input type="time" class="form-control" name="jampulang_sabtu">
+                            </div>
                         </div>
                         <div class="mb-2">
                             <label class="form-label">Toleransi (menit)</label>
@@ -84,6 +96,8 @@
                         {data: 'shift'},
                         {data: 'jammasuk'},
                         {data: 'jampulang'},
+                        {data: 'jammasuk_sabtu', defaultContent: '-'},
+                        {data: 'jampulang_sabtu', defaultContent: '-'},
                         {data: 'toleransi_menit', className: 'text-center', render: d => `${d ?? 30} menit`},
                         {data: 'aksi', orderable: false, searchable: false},
                     ]
@@ -122,6 +136,8 @@
                         $('input[name="shift"]').val(res.shift);
                         $('input[name="jammasuk"]').val(res.jammasuk);
                         $('input[name="jampulang"]').val(res.jampulang);
+                        $('input[name="jammasuk_sabtu"]').val(res.jammasuk_sabtu);
+                        $('input[name="jampulang_sabtu"]').val(res.jampulang_sabtu);
                         $('input[name="toleransi_menit"]').val(res.toleransi_menit ?? 30);
                         $('#modalKelompok').modal('show');
                     });

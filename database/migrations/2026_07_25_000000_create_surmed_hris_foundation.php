@@ -165,6 +165,8 @@ return new class extends Migration
             $table->string('shift', 100)->unique();
             $table->time('jammasuk')->nullable();
             $table->time('jampulang')->nullable();
+            $table->time('jammasuk_sabtu')->nullable();
+            $table->time('jampulang_sabtu')->nullable();
             $table->unsignedSmallInteger('toleransi_menit')->default(30);
         });
     }

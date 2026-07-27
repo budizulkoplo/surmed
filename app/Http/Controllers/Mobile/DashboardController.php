@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Mobile;
 
 use App\Http\Controllers\Controller;
+use App\Models\KelompokJam;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -61,8 +62,8 @@ class DashboardController extends Controller
                 
                 if ($shift && $shift !== '-') {
                     $shiftData = $jamShiftCollection->get($shift);
-                    $jamShift = $shiftData->jammasuk ?? null;
-                    $jamPulangShift = $shiftData->jampulang ?? null;
+                    $jamShift = $shiftData ? KelompokJam::timeForDate($shiftData, 'jammasuk', $tgl) : null;
+                    $jamPulangShift = $shiftData ? KelompokJam::timeForDate($shiftData, 'jampulang', $tgl) : null;
                 }
 
                 return [
@@ -126,7 +127,7 @@ class DashboardController extends Controller
             )
             ->orderBy('masuk.jam_in')
             ->get()
-            ->map(function ($item) use ($jadwalHariIni, $jamShiftLeaderboard) {
+            ->map(function ($item) use ($jadwalHariIni, $jamShiftLeaderboard, $hariIni) {
                 $jadwalUser = $jadwalHariIni->get($item->nik);
                 $shift = $jadwalUser->shift ?? '-';
                 
@@ -135,8 +136,8 @@ class DashboardController extends Controller
                 
                 if ($shift && $shift !== '-') {
                     $shiftData = $jamShiftLeaderboard->get($shift);
-                    $jamShift = $shiftData->jammasuk ?? null;
-                    $jamPulangShift = $shiftData->jampulang ?? null;
+                    $jamShift = $shiftData ? KelompokJam::timeForDate($shiftData, 'jammasuk', $hariIni) : null;
+                    $jamPulangShift = $shiftData ? KelompokJam::timeForDate($shiftData, 'jampulang', $hariIni) : null;
                 }
 
                 return (object) array_merge((array) $item, [
@@ -210,12 +211,12 @@ class DashboardController extends Controller
                         ->where('shift', $shift)
                         ->first();
 
-                    if ($jamShift && $jamShift->jammasuk) {
-                        $jamMasukShift = $jamShift->jammasuk;
+                    if ($jamShift) {
+                        $jamMasukShift = KelompokJam::timeForDate($jamShift, 'jammasuk', $tgl);
                         $jamMasukAktual = $presensiMasuk->jam_in;
 
                         // Hitung keterlambatan
-                        if ($this->isTerlambat($tgl, $jamMasukAktual, $jamMasukShift, $shift)) {
+                        if ($jamMasukShift && $this->isTerlambat($tgl, $jamMasukAktual, $jamMasukShift, $shift)) {
                             $jmlTerlambat++;
                         }
                     }

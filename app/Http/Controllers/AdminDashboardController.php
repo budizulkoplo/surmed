@@ -118,7 +118,7 @@ if ($latestTagihan) {
                 $jadwalHariIni = $jadwalPegawaiByDate->get($tgl);
                 $shiftName = $jadwalHariIni->shift ?? 'office';
                 $jamShift = KelompokJam::where('shift', $shiftName)->first();
-                $jamMasuk = $jamShift->jammasuk ?? null;
+                $jamMasuk = $jamShift ? $jamShift->jamMasukForDate($tgl) : null;
 
                 $presensiHariIni = $presensiPegawai->get($tgl)?->firstWhere('inoutmode', 1);
 

@@ -75,6 +75,7 @@ class GlobalApp
         ];
 
         $currentRoute = strtolower($request->route()->getName() ?? '');
+        $currentPath = trim($request->path(), '/');
 
         if (in_array($currentRoute, $alwaysAllowed)) {
             return $next($request);
@@ -99,12 +100,14 @@ class GlobalApp
         $allowedRoutes = $this->getAllAllowedRoutes($menus);
 
         $hasAccess = in_array($currentRoute, $allowedRoutes) || 
-                    $this->isRouteAllowed($currentRoute, $allowedRoutes);
+                    $this->isRouteAllowed($currentRoute, $allowedRoutes) ||
+                    $this->isPathAllowed($currentPath, $menus);
 
         if (!$hasAccess) {
             // Debug information - bisa dihapus setelah testing
             \Log::info('Access denied', [
                 'current_route' => $currentRoute,
+                'current_path' => $currentPath,
                 'allowed_routes' => $allowedRoutes,
                 'active_module' => $activeModule
             ]);
@@ -174,6 +177,10 @@ class GlobalApp
      */
     private function isRouteAllowed($currentRoute, $allowedRoutes)
     {
+        if (!$currentRoute) {
+            return false;
+        }
+
         foreach ($allowedRoutes as $allowedRoute) {
             // Exact match
             if ($currentRoute === $allowedRoute) {
@@ -198,6 +205,35 @@ class GlobalApp
 
             // Pattern match untuk route dengan parameter (misal: companies/{id})
             if ($this->matchesRoutePattern($currentRoute, $allowedRoute)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Izinkan route legacy yang belum punya nama selama URL masih berada
+     * di bawah path menu yang memang boleh diakses user.
+     */
+    private function isPathAllowed($currentPath, $menus)
+    {
+        if (!$currentPath) {
+            return false;
+        }
+
+        foreach ($menus as $menu) {
+            if (!$menu->link) {
+                continue;
+            }
+
+            try {
+                $menuPath = trim(parse_url(route($menu->link, [], false), PHP_URL_PATH) ?? '', '/');
+            } catch (\Throwable $e) {
+                continue;
+            }
+
+            if ($menuPath && ($currentPath === $menuPath || Str::startsWith($currentPath, $menuPath . '/'))) {
                 return true;
             }
         }

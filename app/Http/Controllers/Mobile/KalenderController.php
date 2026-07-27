@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers\Mobile;
 
+use App\Models\KelompokJam;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -255,8 +256,8 @@ class KalenderController extends BaseMobileController
             }
 
             $jamShiftRow = DB::table('kelompokjam')->where('shift', $shift)->first();
-            $jammasuk = $jamShiftRow->jammasuk ?? null;
-            $jampulang = $jamShiftRow->jampulang ?? null;
+            $jammasuk = $jamShiftRow ? KelompokJam::timeForDate($jamShiftRow, 'jammasuk', $tgl) : null;
+            $jampulang = $jamShiftRow ? KelompokJam::timeForDate($jamShiftRow, 'jampulang', $tgl) : null;
 
             $absenForDate = $presensiCollection->get($tgl) ?? collect();
             $inRecord = $absenForDate->firstWhere('inoutmode', 1);

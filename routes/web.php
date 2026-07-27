@@ -231,8 +231,8 @@ Route::prefix('master')->middleware(['auth', 'verified', 'check.project', 'role:
     Route::get('kelompokjam', [KelompokJamController::class, 'index'])->name('master.kelompokjam');
     Route::get('kelompokjam/data', [KelompokJamController::class, 'getdata'])->name('master.kelompokjam.data');
     Route::post('kelompokjam/store', [KelompokJamController::class, 'store'])->name('master.kelompokjam.store');
-    Route::get('kelompokjam/{id}', [KelompokJamController::class, 'show']);
-    Route::delete('kelompokjam/{id}', [KelompokJamController::class, 'destroy']);
+    Route::get('kelompokjam/{id}', [KelompokJamController::class, 'show'])->name('master.kelompokjam.show');
+    Route::delete('kelompokjam/{id}', [KelompokJamController::class, 'destroy'])->name('master.kelompokjam.destroy');
 });
 
 Route::prefix('master')->middleware(['auth', 'verified', 'check.project', 'role:superadmin', 'global.app'])->group(function () {

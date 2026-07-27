@@ -17,6 +17,12 @@ class KelompokJamController extends Controller
     public function getdata()
     {
         $columns = ['id', 'shift', 'jammasuk', 'jampulang'];
+        if (Schema::hasColumn('kelompokjam', 'jammasuk_sabtu')) {
+            $columns[] = 'jammasuk_sabtu';
+        }
+        if (Schema::hasColumn('kelompokjam', 'jampulang_sabtu')) {
+            $columns[] = 'jampulang_sabtu';
+        }
         if (Schema::hasColumn('kelompokjam', 'toleransi_menit')) {
             $columns[] = 'toleransi_menit';
         }
@@ -41,6 +47,8 @@ class KelompokJamController extends Controller
             'shift' => 'required|string|max:100',
             'jammasuk' => 'required',
             'jampulang' => 'required',
+            'jammasuk_sabtu' => 'nullable',
+            'jampulang_sabtu' => 'nullable',
             'toleransi_menit' => 'nullable|integer|min:0|max:240',
         ]);
 
@@ -57,6 +65,12 @@ class KelompokJamController extends Controller
         $kelompok->shift = $request->shift;
         $kelompok->jammasuk = $request->jammasuk;
         $kelompok->jampulang = $request->jampulang;
+        if (Schema::hasColumn('kelompokjam', 'jammasuk_sabtu')) {
+            $kelompok->jammasuk_sabtu = $request->jammasuk_sabtu;
+        }
+        if (Schema::hasColumn('kelompokjam', 'jampulang_sabtu')) {
+            $kelompok->jampulang_sabtu = $request->jampulang_sabtu;
+        }
         if (Schema::hasColumn('kelompokjam', 'toleransi_menit')) {
             $kelompok->toleransi_menit = $request->input('toleransi_menit', 30);
         }
