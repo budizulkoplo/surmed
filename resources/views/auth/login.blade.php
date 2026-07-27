@@ -1,13 +1,22 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
   <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
     <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+    <meta name="theme-color" content="#5e8455">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>{{ $title ?? 'Login SurMed' }}</title>
+    <meta property="og:title" content="{{ $title ?? 'Login SurMed' }}">
+    <meta property="og:description" content="HRIS Klinik Pratama Surya Medika Boja">
+    <meta property="og:image" content="{{ asset('icons/surmed-pwa-source.png') }}">
+    <meta property="og:type" content="website">
 
     <!-- <link rel="icon" type="image/png" href="{{ asset($setting->path_logo ?? 'logo.png') }}"/> -->
-    <link rel="icon" type="image/png" href="{{ asset('logo.png') }}"/>
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('icons/surmed-pwa-180.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('icons/surmed-pwa-192.png') }}">
 
     <link href="{{ asset('tabler/dist/css/tabler.min.css') }}" rel="stylesheet"/>
     <link href="{{ asset('tabler/dist/css/tabler-flags.min.css') }}" rel="stylesheet"/>
@@ -30,7 +39,12 @@
     </style>
   </head>
   <body class="d-flex flex-column">
-    <script src="{{ asset('tabler/dist/js/demo-theme.min.js') }}"></script>
+    <script>
+      document.documentElement.setAttribute('data-bs-theme', 'light');
+      document.body.removeAttribute('data-bs-theme');
+      localStorage.removeItem('theme');
+      localStorage.removeItem('tablerTheme');
+    </script>
     <div class="page page-center">
       <div class="container container-tight py-4">
         <div class="text-center mb-4">

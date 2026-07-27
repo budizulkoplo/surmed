@@ -10,21 +10,25 @@
         content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#5e8455">
     @php
         use App\Models\Setting;
         $setting = Setting::first();
     @endphp
 
     <title>{{ $setting->nama_perusahaan ?? '-' }} - Absensi</title>
-    <link rel="icon" type="image/png" href="{{ asset('logo.png') }}"/>
+    <link rel="icon" type="image/png" href="{{ asset('icons/surmed-pwa-192.png') }}"/>
+    <meta property="og:title" content="{{ $setting->nama_perusahaan ?? 'Klinik Pratama Surya Medika Boja' }}">
+    <meta property="og:description" content="HRIS Klinik Pratama Surya Medika Boja">
+    <meta property="og:image" content="{{ asset('icons/surmed-pwa-source.png') }}">
+    <meta property="og:type" content="website">
     <meta name="description" content="Mobilekit HTML Mobile UI Kit">
     <meta name="keywords" content="bootstrap 4, mobile template, cordova, phonegap, mobile, html" />
-    <link rel="icon" type="image/png" href="{{ asset('assets/img/favicon.png') }}" sizes="32x32">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('assets/img/icon/192x192.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('icons/surmed-pwa-192.png') }}" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('icons/surmed-pwa-180.png') }}">
     <!-- <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}"> -->
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}?v={{ filemtime(public_path('assets/css/style.css')) }}">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
@@ -129,4 +133,3 @@
 </body>
 
 </html>
-

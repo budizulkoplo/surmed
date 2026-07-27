@@ -6,14 +6,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<meta name="theme-color" content="#5e8455">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 @php
     use App\Models\Setting;
     $setting = Setting::first();
 @endphp
 
 <title>{{ $setting->nama_perusahaan ?? '-' }} - {{ !empty($pagetitle) ? $pagetitle : config('app.name', 'Laravel') }}</title>
+<meta property="og:title" content="{{ $setting->nama_perusahaan ?? 'Klinik Pratama Surya Medika Boja' }}">
+<meta property="og:description" content="HRIS Klinik Pratama Surya Medika Boja">
+<meta property="og:image" content="{{ asset('icons/surmed-pwa-source.png') }}">
+<meta property="og:type" content="website">
 
-<link rel="icon" type="image/x-icon" href="{{ asset('arisa.ico') }}">
+<link rel="manifest" href="{{ asset('manifest.json') }}">
+<link rel="apple-touch-icon" sizes="180x180" href="{{ asset('icons/surmed-pwa-180.png') }}">
+<link rel="icon" type="image/png" sizes="192x192" href="{{ asset('icons/surmed-pwa-192.png') }}">
 <link rel="stylesheet" href="{{ asset('css/bootstrap.min.css') }}">
 <link rel="stylesheet" href="{{ asset('css/overlayscrollbars.min.css') }}">
 <link rel="stylesheet" href="{{ asset('plugins/bootstrap-icons-1.13.1/bootstrap-icons.min.css') }}">

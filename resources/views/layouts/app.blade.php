@@ -36,11 +36,11 @@
 </html> --}}
 
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"> <!--begin::Head-->
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="light"> <!--begin::Head-->
 @props(['menu'])
 <head>
     @include('partials.head')
-    <link rel="icon" type="image/png" href="{{ asset('logo.png') }}"/>
+    <link rel="icon" type="image/png" href="{{ asset('icons/surmed-pwa-192.png') }}"/>
     @if (isset($csscustom))
         {{ $csscustom }}
     @endif

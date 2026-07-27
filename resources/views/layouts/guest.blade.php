@@ -1,11 +1,15 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="light">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <meta name="theme-color" content="#5e8455">
 
         <title>{{ config('app.name', 'Laravel') }}</title>
+        <link rel="manifest" href="{{ asset('manifest.json') }}">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('icons/surmed-pwa-180.png') }}">
+        <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('icons/surmed-pwa-192.png') }}">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
