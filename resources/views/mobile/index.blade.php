@@ -17,6 +17,7 @@
         <div id="user-info">
             @php
                 use App\Models\Setting;
+                use App\Models\KelompokJam;
                 $setting = Setting::first();
 
                 function singkatPerusahaan($nama) {
@@ -113,6 +114,20 @@
                                         $jamMasuk = $data['masuk']->jam_in ?? null;
                                         $jamPulang = $data['pulang']->jam_in ?? null;
                                         $jamMasukShift = $data['jam_masuk_shift'];
+                                        $isMasukTerlambat = false;
+
+                                        if ($jamMasuk && $jamMasukShift) {
+                                            try {
+                                                $shiftStart = \Carbon\Carbon::parse("$tanggal $jamMasukShift");
+                                                $actualTime = \Carbon\Carbon::parse("$tanggal $jamMasuk");
+
+                                                if ($actualTime->gt($shiftStart)) {
+                                                    $isMasukTerlambat = KelompokJam::isLateBySeconds($shiftStart->diffInSeconds($actualTime));
+                                                }
+                                            } catch (\Exception $e) {
+                                                $isMasukTerlambat = false;
+                                            }
+                                        }
                                     @endphp
 
                                     <li class="presence-card">
@@ -128,7 +143,7 @@
                                                 </div>
                                                 <div class="presence-info">
                                                     <small class="presence-label">Absen Masuk</small>
-                                                    <h6 class="presence-time {{ $jamMasuk && $jamMasuk > $jamMasukShift ? 'text-danger' : 'text-success' }}">
+                                                    <h6 class="presence-time {{ $isMasukTerlambat ? 'text-danger' : 'text-success' }}">
                                                         {{ $jamMasuk ? \Carbon\Carbon::parse($jamMasuk)->format('H:i') : '-' }}
                                                     </h6>
                                                 </div>
@@ -170,6 +185,22 @@
                                     @php
                                         $jamMasuk = $d->jam_masuk ?? null;
                                         $jamPulang = $d->jam_pulang ?? null;
+                                        $jamMasukShift = $d->jam_masuk_shift ?? null;
+                                        $isMasukTerlambat = false;
+
+                                        if ($jamMasuk && $jamMasukShift) {
+                                            try {
+                                                $tanggalLeaderboard = \Carbon\Carbon::today()->toDateString();
+                                                $shiftStart = \Carbon\Carbon::parse("$tanggalLeaderboard $jamMasukShift");
+                                                $actualTime = \Carbon\Carbon::parse("$tanggalLeaderboard $jamMasuk");
+
+                                                if ($actualTime->gt($shiftStart)) {
+                                                    $isMasukTerlambat = KelompokJam::isLateBySeconds($shiftStart->diffInSeconds($actualTime));
+                                                }
+                                            } catch (\Exception $e) {
+                                                $isMasukTerlambat = false;
+                                            }
+                                        }
                                     @endphp
                                     <li>
                                         <div class="leaderboard-item">
@@ -190,7 +221,7 @@
                                             <div class="leaderboard-right">
                                                 <div class="time-row">
                                                     <span class="time-label">Masuk:</span>
-                                                    <span class="time-badge {{ isset($jamMasukShift) && $jamMasuk && $jamMasuk > $jamMasukShift ? 'badge-late' : 'badge-ontime' }}">
+                                                    <span class="time-badge {{ $isMasukTerlambat ? 'badge-late' : 'badge-ontime' }}">
                                                         {{ $jamMasuk ? \Carbon\Carbon::parse($jamMasuk)->format('H:i') : '-' }}
                                                     </span>
                                                 </div>

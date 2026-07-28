@@ -254,7 +254,7 @@ class DashboardController extends Controller
                 // Hitung terlambat hanya jika masuk setelah jam shift
                 if ($actualTime->gt($shiftStart)) {
                     $diffSeconds = $shiftStart->diffInSeconds($actualTime);
-                    return $diffSeconds > 60; // lebih dari 1 menit
+                    return KelompokJam::isLateBySeconds($diffSeconds);
                 }
                 
                 return false;
@@ -262,7 +262,7 @@ class DashboardController extends Controller
                 // Untuk shift reguler
                 if ($actualTime->gt($shiftStart)) {
                     $diffSeconds = $shiftStart->diffInSeconds($actualTime);
-                    return $diffSeconds > 60; // lebih dari 1 menit
+                    return KelompokJam::isLateBySeconds($diffSeconds);
                 }
                 
                 return false;

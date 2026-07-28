@@ -104,11 +104,18 @@
                         <div class="list-group list-group-flush">
                             <div class="list-group-item d-flex justify-content-between align-items-center">
                                 <span>Masuk</span>
+                                @php
+                                    $avgMasukSeconds = isset($avgSelisihMasuk) && $avgSelisihMasuk !== null
+                                        ? (int) round($avgSelisihMasuk * 60)
+                                        : null;
+                                    $avgMasukTerlambat = $avgMasukSeconds !== null
+                                        && \App\Models\KelompokJam::isLateBySeconds($avgMasukSeconds);
+                                @endphp
                                 <span class="badge rounded-pill px-3
-                                    {{ ($avgSelisihMasuk ?? 0) > 0 ? 'bg-danger' : (($avgSelisihMasuk ?? 0) < 0 ? 'bg-success' : 'bg-secondary') }}">
+                                    {{ $avgMasukTerlambat ? 'bg-danger' : (($avgSelisihMasuk ?? 0) < 0 ? 'bg-success' : 'bg-secondary') }}">
                                     @if(isset($avgSelisihMasuk) && $avgSelisihMasuk !== null)
                                         {{ abs(round($avgSelisihMasuk, 1)) }} menit
-                                        {{ $avgSelisihMasuk > 0 ? 'terlambat' : ($avgSelisihMasuk < 0 ? 'lebih awal' : 'tepat waktu') }}
+                                        {{ $avgMasukTerlambat ? 'terlambat' : ($avgSelisihMasuk < 0 ? 'lebih awal' : 'tepat waktu') }}
                                     @else
                                         -
                                     @endif

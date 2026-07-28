@@ -106,7 +106,10 @@ class LaporanController extends Controller
                     $shiftStart = Carbon::parse("$tgl $jammasuk");
                     $inDt = Carbon::parse("$tgl $in");
                     if ($inDt->gt($shiftStart)) {
-                        $totalTerlambatSeconds += $shiftStart->diffInSeconds($inDt);
+                        $diffSeconds = $shiftStart->diffInSeconds($inDt);
+                        if (KelompokJam::isLateBySeconds($diffSeconds)) {
+                            $totalTerlambatSeconds += $diffSeconds;
+                        }
                     }
                 }
 

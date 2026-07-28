@@ -78,7 +78,7 @@
 
                         @php
                             $totalHadir = 0;
-                            $cutoffTime = '15:00'; // Define cutoff time for being on time
+                            $cutoffTime = '15:00:00'; // batas hadir, dengan toleransi 4 menit 59 detik
                         @endphp
 
                         @for ($minggu = 1; $minggu <= 4; $minggu++)
@@ -94,8 +94,11 @@
                                         $totalHadir++;
 
                                         // Check if the attendance time is late
-                                        if ($absen->jam_in > $cutoffTime) {
-                                            $lateClass = 'late'; // Add class for late attendance
+                                        $cutoff = \Carbon\Carbon::parse("{$absen->tgl_presensi} $cutoffTime");
+                                        $actual = \Carbon\Carbon::parse("{$absen->tgl_presensi} {$absen->jam_in}");
+
+                                        if ($actual->gt($cutoff) && \App\Models\KelompokJam::isLateBySeconds($cutoff->diffInSeconds($actual))) {
+                                            $lateClass = 'late';
                                         }
                                         break;
                                     }

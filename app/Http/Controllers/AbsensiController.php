@@ -138,13 +138,15 @@ class AbsensiController extends Controller
 
                         if ($inDt->greaterThan($shiftStart)) {
                             $diffSeconds = $shiftStart->diffInSeconds($inDt);
-                            $terlambat = round($diffSeconds / 60, 2);
-                            $total_terlambat += $terlambat;
+                            if (KelompokJam::isLateBySeconds($diffSeconds)) {
+                                $terlambat = round($diffSeconds / 60, 2);
+                                $total_terlambat += $terlambat;
 
-                            $hours = floor($diffSeconds / 3600);
-                            $minutes = floor(($diffSeconds % 3600) / 60);
-                            $seconds = $diffSeconds % 60;
-                            $terlambat_jam = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+                                $hours = floor($diffSeconds / 3600);
+                                $minutes = floor(($diffSeconds % 3600) / 60);
+                                $seconds = $diffSeconds % 60;
+                                $terlambat_jam = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+                            }
                         }
                     } catch (\Exception $e) {
                         $terlambat = 0;

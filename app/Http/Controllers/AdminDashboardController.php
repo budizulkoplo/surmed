@@ -136,8 +136,10 @@ if ($latestTagihan) {
                         }
 
                         if ($jamPresensi->gt($jamMasukDt)) {
-                            $terlambat = $jamMasukDt->diffInMinutes($jamPresensi);
-                            $totalTerlambat += $terlambat;
+                            $diffSeconds = $jamMasukDt->diffInSeconds($jamPresensi);
+                            if (KelompokJam::isLateBySeconds($diffSeconds)) {
+                                $totalTerlambat += round($diffSeconds / 60, 2);
+                            }
                         }
                     } catch (\Exception $e) {}
                 }

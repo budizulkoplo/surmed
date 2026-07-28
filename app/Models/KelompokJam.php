@@ -10,6 +10,8 @@ class KelompokJam extends Model
 {
     use HasFactory;
 
+    public const LATE_TOLERANCE_SECONDS = 299; // 4 menit 59 detik
+
     protected $table = 'kelompokjam';
     protected $primaryKey = 'id';
     public $timestamps = false; // jika tidak ada created_at/updated_at
@@ -42,5 +44,10 @@ class KelompokJam extends Model
         }
 
         return $shift->{$column} ?? null;
+    }
+
+    public static function isLateBySeconds(int $seconds): bool
+    {
+        return $seconds > self::LATE_TOLERANCE_SECONDS;
     }
 }

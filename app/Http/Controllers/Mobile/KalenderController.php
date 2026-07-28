@@ -84,13 +84,9 @@ class KalenderController extends BaseMobileController
             $chartValues = [];
             foreach ($data['dataKalender'] as $tgl => $row) {
                 $chartLabels[] = Carbon::parse($tgl)->translatedFormat('d M');
-                if (!empty($row['jam_masuk']) && !empty($row['jam_masuk_shift']) && empty($row['status_khusus'])) {
-                    $masuk = strtotime(strip_tags($row['jam_masuk']));
-                    $shift = strtotime($row['jam_masuk_shift']);
-                    $chartValues[] = max(0, round(($masuk - $shift) / 60, 1)); // menit keterlambatan
-                } else {
-                    $chartValues[] = 0;
-                }
+                $chartValues[] = empty($row['status_khusus'])
+                    ? round(($row['terlambat'] ?? 0) / 60, 1)
+                    : 0;
             }
 
             // Pass semua ke view
@@ -306,19 +302,23 @@ class KalenderController extends BaseMobileController
                         if (!($inTime->lt($shiftStart) && $inTime->hour >= 18)) {
                             if ($inTime->gt($shiftStart)) {
                                 $diffSeconds = $shiftStart->diffInSeconds($inTime);
-                                $hours = floor($diffSeconds / 3600);
-                                $minutes = floor(($diffSeconds % 3600) / 60);
-                                $terlambat = $diffSeconds;
-                                $terlambat_jam = sprintf('%02d:%02d', $hours, $minutes);
+                                if (KelompokJam::isLateBySeconds($diffSeconds)) {
+                                    $hours = floor($diffSeconds / 3600);
+                                    $minutes = floor(($diffSeconds % 3600) / 60);
+                                    $terlambat = $diffSeconds;
+                                    $terlambat_jam = sprintf('%02d:%02d', $hours, $minutes);
+                                }
                             }
                         }
                     } else {
                         if ($inTime->gt($shiftStart)) {
                             $diffSeconds = $shiftStart->diffInSeconds($inTime);
-                            $hours = floor($diffSeconds / 3600);
-                            $minutes = floor(($diffSeconds % 3600) / 60);
-                            $terlambat = $diffSeconds;
-                            $terlambat_jam = sprintf('%02d:%02d', $hours, $minutes);
+                            if (KelompokJam::isLateBySeconds($diffSeconds)) {
+                                $hours = floor($diffSeconds / 3600);
+                                $minutes = floor(($diffSeconds % 3600) / 60);
+                                $terlambat = $diffSeconds;
+                                $terlambat_jam = sprintf('%02d:%02d', $hours, $minutes);
+                            }
                         }
                     }
                 } catch (\Exception $e) {
@@ -538,10 +538,10 @@ class KalenderController extends BaseMobileController
                 $selisihMasuk = $actualMasuk - $shiftMasuk;
                 $stats['totalSelisihMasuk'] += $selisihMasuk;
 
-                if ($selisihMasuk > 60) {
+                if (KelompokJam::isLateBySeconds($selisihMasuk)) {
                     $stats['jumlahTerlambat']++;
                     $stats['terlambat'] += $selisihMasuk;
-                } elseif ($selisihMasuk <= 60 && $selisihMasuk >= -60) {
+                } elseif ($selisihMasuk <= KelompokJam::LATE_TOLERANCE_SECONDS && $selisihMasuk >= -60) {
                     $stats['jumlahTepatWaktu']++;
                 }
             }
