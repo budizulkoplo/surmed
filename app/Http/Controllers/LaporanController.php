@@ -10,10 +10,13 @@ use App\Models\KelompokJam;
 use App\Models\PengajuanIzin;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http; 
+use Illuminate\Support\Facades\Http;
 
 class LaporanController extends Controller
 {
+    private const AHAD_PAGI_API_URL = 'https://kajian.pcmboja.com/api/kehadiran';
+    private const AHAD_PAGI_API_KEY = 'pkuboja2025';
+
     // Halaman utama laporan
     public function rekapAbsensi()
     {
@@ -35,6 +38,8 @@ class LaporanController extends Controller
         ->where('status', 'aktif')                // hanya pegawai aktif
         ->whereHas('pegawaiDtl')                  // hanya yang punya detail pegawai
         ->get();
+        $periode = sprintf('%04d-%02d', $tahun, $bulan);
+        $ahadPagiByNik = $this->getAhadPagiCountsByNik($periode);
         $data = [];
 
         foreach ($pegawaiList as $p) {
@@ -140,8 +145,9 @@ class LaporanController extends Controller
                 'total_jam_kerja' => $this->secondsToHourMinute($totalJamKerjaSeconds),
                 'lembur' => $this->secondsToHourMinute($totalLemburSeconds),
                 'terlambat' => $this->secondsToHourMinute($totalTerlambatSeconds),
+                'ahad_pagi' => $ahadPagiByNik[$p->nik] ?? 0,
                 'cuti' => $cutiCount,
-                'total' => $jmlAbsensi + $cutiCount
+                'total' => $jmlAbsensi + $cutiCount + ($ahadPagiByNik[$p->nik] ?? 0)
             ];
         }
 
@@ -318,6 +324,90 @@ class LaporanController extends Controller
     public function monitoringPresensi()
     {
         return view('hris.laporan.monitoring_presensi');
+    }
+
+    public function monitoringAhadPagi()
+    {
+        $tanggal = now()->isSunday()
+            ? now()->format('Y-m-d')
+            : now()->previous(Carbon::SUNDAY)->format('Y-m-d');
+
+        return view('hris.laporan.monitoring_ahad_pagi', compact('tanggal'));
+    }
+
+    public function monitoringAhadPagiData(Request $request)
+    {
+        $tanggal = $request->tanggal ?? date('Y-m-d');
+        $periode = Carbon::parse($tanggal)->format('Y-m');
+
+        $data = collect($this->fetchAhadPagiData($periode))
+            ->filter(fn ($item) => ($item['tgl_presensi'] ?? null) === $tanggal)
+            ->sortBy([
+                ['nama_lengkap', 'asc'],
+                ['jam_in', 'asc'],
+            ])
+            ->values()
+            ->map(function ($item) {
+                $foto = $item['foto_in'] ?? null;
+
+                return [
+                    'nik' => $item['nik'] ?? '-',
+                    'nama_lengkap' => $item['nama_lengkap'] ?? '-',
+                    'jabatan' => $item['jabatan'] ?? '-',
+                    'tgl_presensi' => $item['tgl_presensi'] ?? null,
+                    'jam_in' => $item['jam_in'] ?? null,
+                    'foto_in' => $foto,
+                    'foto_url' => $foto ? 'https://kajian.pcmboja.com/storage/uploads/absensi/' . $foto : null,
+                    'lokasi' => $item['lokasi'] ?? null,
+                    'judul' => $item['judul'] ?? '-',
+                    'pemateri' => $item['pemateri'] ?? '-',
+                ];
+            });
+
+        return response()->json(['data' => $data]);
+    }
+
+    private function fetchAhadPagiData(string $periode): array
+    {
+        try {
+            $response = Http::withoutVerifying()
+                ->timeout(15)
+                ->withHeaders([
+                    'X-API-KEY' => self::AHAD_PAGI_API_KEY,
+                ])
+                ->get(self::AHAD_PAGI_API_URL, [
+                    'periode' => $periode,
+                    'dept' => 2,
+                ]);
+
+            if (!$response->ok()) {
+                logger()->warning('Gagal mengambil data Ahad Pagi dari API.', [
+                    'periode' => $periode,
+                    'status' => $response->status(),
+                ]);
+
+                return [];
+            }
+
+            $result = $response->json();
+
+            return is_array($result['data'] ?? null) ? $result['data'] : [];
+        } catch (\Throwable $e) {
+            logger()->error('Error API Ahad Pagi: ' . $e->getMessage(), [
+                'periode' => $periode,
+            ]);
+
+            return [];
+        }
+    }
+
+    private function getAhadPagiCountsByNik(string $periode): array
+    {
+        return collect($this->fetchAhadPagiData($periode))
+            ->filter(fn ($item) => !empty($item['nik']) && !empty($item['tgl_presensi']))
+            ->groupBy('nik')
+            ->map(fn ($items) => $items->pluck('tgl_presensi')->unique()->count())
+            ->all();
     }
 
     public function monitoringPresensiData(Request $request)

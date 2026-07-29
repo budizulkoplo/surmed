@@ -263,6 +263,8 @@ Route::prefix('hris')->middleware(['auth', 'verified', 'check.project', 'role:su
     Route::get('laporan/monitoring-presensi', [LaporanController::class, 'monitoringPresensi'])->name('hris.laporan.monitoring_presensi');
     Route::get('laporan/monitoring-presensi/data', [LaporanController::class, 'monitoringPresensiData'])->name('hris.laporan.monitoring_presensi.data');
     Route::post('laporan/monitoring-presensi/export', [LaporanController::class, 'exportMonitoringPresensi'])->name('hris.laporan.monitoring_presensi.export');
+    Route::get('laporan/monitoring-ahad-pagi', [LaporanController::class, 'monitoringAhadPagi'])->name('hris.laporan.monitoring_ahad_pagi');
+    Route::get('laporan/monitoring-ahad-pagi/data', [LaporanController::class, 'monitoringAhadPagiData'])->name('hris.laporan.monitoring_ahad_pagi.data');
 
     // === Payroll (Tabel Gaji) ===
     Route::get('payroll', [PayrollController::class, 'index'])->name('hris.payroll.index');

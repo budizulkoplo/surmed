@@ -44,6 +44,7 @@
                                 <th>Total Jam Kerja</th>
                                 <th>Total Lembur</th>
                                 <th>Terlambat (Jam:Menit)</th>
+                                <th>Ahad Pagi</th>
                                 <th>Cuti</th>
                                 <th>Total</th>
                             </tr>
@@ -96,6 +97,7 @@
                         { data: 'total_jam_kerja', className: 'text-center' },
                         { data: 'lembur', className: 'text-center' },
                         { data: 'terlambat', className: 'text-center' },
+                        { data: 'ahad_pagi', className: 'text-center' },
                         { data: 'cuti', className: 'text-center' },
                         { data: 'total', className: 'text-center fw-bold' },
                     ],
