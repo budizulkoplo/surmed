@@ -24,6 +24,7 @@ use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\PengajuanIzinController;
 use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\Mobile\QuranController as MobileQuranController;
 
 // Mobile
 use App\Http\Controllers\Mobile\DashboardController;
@@ -206,6 +207,12 @@ Route::middleware(['auth'])->name('mobile.')->group(function () {
         Route::get('/{tahun}/{bulan}', [App\Http\Controllers\Mobile\PayrollController::class, 'detail'])->name('detail');
         Route::get('/download/{id}', [App\Http\Controllers\Mobile\PayrollController::class, 'downloadSlip'])->name('download');
     });
+
+    Route::prefix('quran')->name('quran.')->group(function () {
+        Route::get('/', [MobileQuranController::class, 'index'])->name('index');
+        Route::post('/mark-rutin', [MobileQuranController::class, 'markRutin'])->name('markRutin');
+        Route::get('/{nomor}', [MobileQuranController::class, 'show'])->name('show');
+    });
 });
 
 Route::redirect('/mobile/home', '/');
@@ -271,5 +278,7 @@ Route::prefix('hris')->middleware(['auth', 'verified', 'check.project', 'role:su
     Route::get('payroll/data', [PayrollController::class, 'getData'])->name('hris.payroll.data');
     Route::post('payroll/update', [PayrollController::class, 'updateManual'])->name('hris.payroll.update_manual');
     Route::get('payroll/slip/{payroll_id}', [PayrollController::class, 'downloadSlip'])->name('hris.payroll.slip');
+
+
 });
 require __DIR__ . '/auth.php';
