@@ -27,7 +27,7 @@
 
                 <div class="col-md-4 text-end">
 
-                    <a href="{{ route('hris.laporan.rekap_absensi') }}"
+                    <a href="{{ route('hris.laporan.rekap_absensi', ['tgl_awal' => $awal->toDateString(), 'tgl_akhir' => $akhir->toDateString()]) }}"
                        class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i>
                         Kembali

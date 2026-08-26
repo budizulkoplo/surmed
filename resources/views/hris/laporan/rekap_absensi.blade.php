@@ -8,20 +8,14 @@
                     <h3 class="mb-0"><i class="bi bi-clipboard-data"></i> Laporan Rekap Absensi</h3>
                 </div>
                 <div class="col-sm-6 text-end">
-                    <div class="d-flex justify-content-end gap-2">
-                        <select id="bulan" class="form-select form-select-sm w-auto" onchange="reloadTable()">
-                            @for($m=1;$m<=12;$m++)
-                                <option value="{{ $m }}" {{ $m==$bulan?'selected':'' }}>
-                                    {{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}
-                                </option>
-                            @endfor
-                        </select>
+                    <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap">
+                        <label for="tgl_awal" class="mb-0 small text-muted">Tgl Awal</label>
+                        <input type="date" id="tgl_awal" class="form-control form-control-sm w-auto"
+                               value="{{ $tglAwal }}" onchange="reloadTable()">
 
-                        <select id="tahun" class="form-select form-select-sm w-auto" onchange="reloadTable()">
-                            @for($y=date('Y')-2;$y<=date('Y')+2;$y++)
-                                <option value="{{ $y }}" {{ $y==$tahun?'selected':'' }}>{{ $y }}</option>
-                            @endfor
-                        </select>
+                        <label for="tgl_akhir" class="mb-0 small text-muted">Tgl Akhir</label>
+                        <input type="date" id="tgl_akhir" class="form-control form-control-sm w-auto"
+                               value="{{ $tglAkhir }}" onchange="reloadTable()">
                     </div>
                 </div>
             </div>
@@ -77,8 +71,8 @@
                     ajax: {
                         url: "{{ route('hris.laporan.rekap_absensi.data') }}",
                         data: function(d) {
-                            d.bulan = $('#bulan').val();
-                            d.tahun = $('#tahun').val();
+                            d.tgl_awal = $('#tgl_awal').val();
+                            d.tgl_akhir = $('#tgl_akhir').val();
                         },
                         dataSrc: "data"
                     },
@@ -88,13 +82,13 @@
                             data: null,
                             render: (data) => {
 
-                                const bulan = $('#bulan').val();
-                                const tahun = $('#tahun').val();
+                                const tglAwal = $('#tgl_awal').val();
+                                const tglAkhir = $('#tgl_akhir').val();
 
                                 const url = "{{ url('hris/laporan/rekap-absensi') }}/" 
                                             + data.nik 
-                                            + "/detail?bulan=" + bulan 
-                                            + "&tahun=" + tahun;
+                                            + "/detail?tgl_awal=" + tglAwal 
+                                            + "&tgl_akhir=" + tglAkhir;
 
                                 return `
                                     <div class="d-flex justify-content-between align-items-center gap-2">
@@ -136,12 +130,12 @@
                             text: '<i class="bi bi-save"></i> Export to Payroll',
                             className: 'btn btn-warning btn-sm',
                             action: function () {
-                                let bulan = $('#bulan').val();
-                                let tahun = $('#tahun').val();
+                                let tglAwal = $('#tgl_awal').val();
+                                let tglAkhir = $('#tgl_akhir').val();
 
                                 Swal.fire({
                                     title: 'Export ke Payroll?',
-                                    text: "Data periode " + bulan + "-" + tahun + " akan dimasukkan ke tabel payroll.",
+                                    text: "Data periode " + tglAwal + " s/d " + tglAkhir + " akan dimasukkan ke tabel payroll.",
                                     icon: 'question',
                                     showCancelButton: true,
                                     confirmButtonText: 'Ya, Export',
@@ -150,8 +144,8 @@
                                     if (result.isConfirmed) {
                                         $.post("{{ route('hris.laporan.rekap_absensi.export_payroll') }}", {
                                             _token: '{{ csrf_token() }}',
-                                            bulan: bulan,
-                                            tahun: tahun
+                                            tgl_awal: tglAwal,
+                                            tgl_akhir: tglAkhir
                                         })
                                         .done((res) => {
                                             Swal.fire('Berhasil!', res.message, 'success');

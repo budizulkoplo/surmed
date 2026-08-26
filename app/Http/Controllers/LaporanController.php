@@ -18,28 +18,27 @@ class LaporanController extends Controller
     private const AHAD_PAGI_API_KEY = 'pkuboja2025';
 
     // Halaman utama laporan
-    public function rekapAbsensi()
+    public function rekapAbsensi(Request $request)
     {
-        $bulan = now()->format('m');
-        $tahun = now()->format('Y');
-        return view('hris.laporan.rekap_absensi', compact('bulan', 'tahun'));
+        [$tglAwal, $tglAkhir] = $this->resolveRekapDateRange($request);
+
+        return view('hris.laporan.rekap_absensi', [
+            'tglAwal' => $tglAwal->toDateString(),
+            'tglAkhir' => $tglAkhir->toDateString(),
+        ]);
     }
 
     // Data untuk DataTables (AJAX)
     public function rekapAbsensiData(Request $request)
     {
-        $bulan = $request->input('bulan', now()->format('m'));
-        $tahun = $request->input('tahun', now()->format('Y'));
-
-        $awal = Carbon::createFromDate($tahun, $bulan, 1)->startOfDay();
-        $akhir = $awal->copy()->endOfMonth();
+        [$awal, $akhir] = $this->resolveRekapDateRange($request);
+        $jumlahHariPeriode = $awal->diffInDays($akhir) + 1;
 
         $pegawaiList = User::with('unitkerja')
         ->where('status', 'aktif')                // hanya pegawai aktif
         ->whereHas('pegawaiDtl')                  // hanya yang punya detail pegawai
         ->get();
-        $periode = sprintf('%04d-%02d', $tahun, $bulan);
-        $ahadPagiByNik = $this->getAhadPagiCountsByNik($periode);
+        $ahadPagiByNik = $this->getAhadPagiCountsByNikForRange($awal, $akhir);
         $data = [];
 
         foreach ($pegawaiList as $p) {
@@ -57,8 +56,7 @@ class LaporanController extends Controller
                 ->groupBy('tgl_presensi');
 
             $cutiCount = PengajuanIzin::where('nik', $p->nik)
-                ->whereMonth('tgl_izin', $bulan)
-                ->whereYear('tgl_izin', $tahun)
+                ->whereBetween('tgl_izin', [$awal->toDateString(), $akhir->toDateString()])
                 ->where('status', 'c')
                 ->where('status_approved', 1)
                 ->count();
@@ -130,7 +128,7 @@ class LaporanController extends Controller
                 $cursor->addDay();
             }
 
-            if ($jadwalCollection->count() < $awal->daysInMonth) {
+            if ($jadwalCollection->count() < $jumlahHariPeriode) {
                 $hariKerja = max($hariKerja, $fallbackHariKerja);
             }
 
@@ -156,9 +154,8 @@ class LaporanController extends Controller
 
     public function exportPayroll(Request $request)
     {
-        $bulan = $request->input('bulan');
-        $tahun = $request->input('tahun');
-        $periode = sprintf('%04d-%02d', $tahun, $bulan);
+        [$awal, $akhir] = $this->resolveRekapDateRange($request);
+        $periode = $awal->format('Y-m');
 
         // Ambil data rekap absensi
         $rekapData = $this->rekapAbsensiData($request)->getData()->data;
@@ -166,10 +163,7 @@ class LaporanController extends Controller
         // Hapus data lama periode yang sama
         DB::table('payroll')->where('periode', $periode)->delete();
 
-        // Ambil data hari libur nasional untuk bulan itu
-        $bulanStr = "$tahun-" . str_pad($bulan, 2, '0', STR_PAD_LEFT);
-        $holidays = $this->filterHolidaysByMonth($bulanStr);
-        $holidayDates = array_keys($holidays);
+        $holidayDates = array_keys($this->filterHolidaysByDateRange($awal, $akhir));
 
         foreach ($rekapData as $r) {
             // Ambil UMK dari unit kerja pegawai
@@ -178,8 +172,7 @@ class LaporanController extends Controller
 
             // Hitung Gaji Pokok (Full hadir atau prorata)
             $jadwalHariKerja = Jadwal::where('pegawai_nik', $r->nik)
-                ->whereMonth('tgl', $bulan)
-                ->whereYear('tgl', $tahun)
+                ->whereBetween('tgl', [$awal->toDateString(), $akhir->toDateString()])
                 ->where('shift', '<>', 'Libur')
                 ->count();
 
@@ -279,6 +272,26 @@ class LaporanController extends Controller
 
         return array_filter($holidays, function ($key) use ($selectedMonth) {
             return date('m', strtotime($key)) == $selectedMonth;
+        }, ARRAY_FILTER_USE_KEY);
+    }
+
+    protected function filterHolidaysByDateRange(Carbon $awal, Carbon $akhir): array
+    {
+        $holidays = [];
+        $cursor = $awal->copy()->startOfMonth();
+        $endMonth = $akhir->copy()->startOfMonth();
+
+        while ($cursor->lte($endMonth)) {
+            $holidays = array_merge(
+                $holidays,
+                $this->filterHolidaysByMonth($cursor->format('Y-m'))
+            );
+            $cursor->addMonth();
+        }
+
+        return array_filter($holidays, function ($key) use ($awal, $akhir) {
+            $tgl = Carbon::parse($key)->startOfDay();
+            return $tgl->betweenIncluded($awal->copy()->startOfDay(), $akhir->copy()->startOfDay());
         }, ARRAY_FILTER_USE_KEY);
     }
 
@@ -410,6 +423,65 @@ class LaporanController extends Controller
             ->all();
     }
 
+    private function getAhadPagiCountsByNikForRange(Carbon $awal, Carbon $akhir): array
+    {
+        $counts = [];
+        $cursor = $awal->copy()->startOfMonth();
+        $endMonth = $akhir->copy()->startOfMonth();
+        $rangeStart = $awal->copy()->startOfDay();
+        $rangeEnd = $akhir->copy()->startOfDay();
+
+        while ($cursor->lte($endMonth)) {
+            $periodeCounts = collect($this->fetchAhadPagiData($cursor->format('Y-m')))
+                ->filter(function ($item) use ($rangeStart, $rangeEnd) {
+                    if (empty($item['nik']) || empty($item['tgl_presensi'])) {
+                        return false;
+                    }
+
+                    $tgl = Carbon::parse($item['tgl_presensi'])->startOfDay();
+
+                    return $tgl->betweenIncluded($rangeStart, $rangeEnd);
+                })
+                ->groupBy('nik')
+                ->map(fn ($items) => $items->pluck('tgl_presensi')->unique()->count());
+
+            foreach ($periodeCounts as $nik => $jumlah) {
+                $counts[$nik] = ($counts[$nik] ?? 0) + $jumlah;
+            }
+
+            $cursor->addMonth();
+        }
+
+        return $counts;
+    }
+
+    private function resolveRekapDateRange(Request $request): array
+    {
+        $defaultAwal = now()->copy()->startOfMonth();
+        $defaultAkhir = now()->copy()->endOfMonth();
+
+        $tglAwal = $request->input('tgl_awal');
+        $tglAkhir = $request->input('tgl_akhir');
+
+        if (!$tglAwal && $request->filled('bulan') && $request->filled('tahun')) {
+            $tglAwal = Carbon::createFromDate(
+                (int) $request->input('tahun'),
+                (int) $request->input('bulan'),
+                1
+            )->toDateString();
+            $tglAkhir = Carbon::parse($tglAwal)->endOfMonth()->toDateString();
+        }
+
+        $awal = $tglAwal ? Carbon::parse($tglAwal)->startOfDay() : $defaultAwal->copy()->startOfDay();
+        $akhir = $tglAkhir ? Carbon::parse($tglAkhir)->endOfDay() : $defaultAkhir->copy()->endOfDay();
+
+        if ($akhir->lt($awal)) {
+            [$awal, $akhir] = [$akhir->copy()->startOfDay(), $awal->copy()->endOfDay()];
+        }
+
+        return [$awal, $akhir];
+    }
+
     public function monitoringPresensiData(Request $request)
     {
         $tanggal = $request->tanggal ?? date('Y-m-d');
@@ -440,15 +512,11 @@ class LaporanController extends Controller
 
     public function detailRekapAbsensi(Request $request, $nik)
     {
-        $bulan = (int) $request->input('bulan', now()->month);
-        $tahun = (int) $request->input('tahun', now()->year);
+        [$awal, $akhir] = $this->resolveRekapDateRange($request);
 
         $pegawai = User::with('unitkerja')
             ->where('nik', $nik)
             ->firstOrFail();
-
-        $awal = Carbon::create($tahun, $bulan, 1)->startOfDay();
-        $akhir = $awal->copy()->endOfMonth();
 
         // Ambil jadwal selama periode
         $jadwalCollection = Jadwal::where('pegawai_nik', $nik)
@@ -644,8 +712,6 @@ class LaporanController extends Controller
             'hris.laporan.detail_rekap_absensi',
             compact(
                 'pegawai',
-                'bulan',
-                'tahun',
                 'awal',
                 'akhir',
                 'data',
