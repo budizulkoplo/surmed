@@ -411,31 +411,251 @@ class LaporanController extends Controller
     }
 
     public function monitoringPresensiData(Request $request)
-{
-    $tanggal = $request->tanggal ?? date('Y-m-d');
+    {
+        $tanggal = $request->tanggal ?? date('Y-m-d');
 
-    $data = DB::table('presensi as p')
-        ->select(
-            'p.nik',
-            'k.nip',
-            'k.name',
-            'u.namaunit',
-            DB::raw('MAX(CASE WHEN p.inoutmode = 1 THEN p.jam_in END) as jam_masuk'),
-            DB::raw('MAX(CASE WHEN p.inoutmode = 2 THEN p.jam_in END) as jam_pulang'),
-            DB::raw('MAX(CASE WHEN p.inoutmode = 1 THEN p.foto_in END) as foto_masuk'),
-            DB::raw('MAX(CASE WHEN p.inoutmode = 2 THEN p.foto_in END) as foto_pulang'),
-            DB::raw('MAX(CASE WHEN p.inoutmode = 1 THEN p.lokasi END) as lokasi_masuk'),
-            DB::raw('MAX(CASE WHEN p.inoutmode = 2 THEN p.lokasi END) as lokasi_pulang')
-        )
-        ->join('users as k', 'p.nik', '=', 'k.nik')
-        ->leftJoin('unitkerja as u', 'k.id_unitkerja', '=', 'u.id')
-        ->where('p.tgl_presensi', $tanggal)
-        ->groupBy('k.nip','p.nik', 'k.name', 'u.namaunit')
-        ->orderBy('k.name')
-        ->get();
+        $data = DB::table('presensi as p')
+            ->select(
+                'p.nik',
+                'k.nip',
+                'k.name',
+                'u.namaunit',
+                DB::raw('MAX(CASE WHEN p.inoutmode = 1 THEN p.jam_in END) as jam_masuk'),
+                DB::raw('MAX(CASE WHEN p.inoutmode = 2 THEN p.jam_in END) as jam_pulang'),
+                DB::raw('MAX(CASE WHEN p.inoutmode = 1 THEN p.foto_in END) as foto_masuk'),
+                DB::raw('MAX(CASE WHEN p.inoutmode = 2 THEN p.foto_in END) as foto_pulang'),
+                DB::raw('MAX(CASE WHEN p.inoutmode = 1 THEN p.lokasi END) as lokasi_masuk'),
+                DB::raw('MAX(CASE WHEN p.inoutmode = 2 THEN p.lokasi END) as lokasi_pulang')
+            )
+            ->join('users as k', 'p.nik', '=', 'k.nik')
+            ->leftJoin('unitkerja as u', 'k.id_unitkerja', '=', 'u.id')
+            ->where('p.tgl_presensi', $tanggal)
+            ->groupBy('k.nip','p.nik', 'k.name', 'u.namaunit')
+            ->orderBy('k.name')
+            ->get();
 
-    // ✅ Ini yang benar untuk DataTables
-    return response()->json(['data' => $data]);
-}
+        // ✅ Ini yang benar untuk DataTables
+        return response()->json(['data' => $data]);
+    }
+
+    public function detailRekapAbsensi(Request $request, $nik)
+    {
+        $bulan = (int) $request->input('bulan', now()->month);
+        $tahun = (int) $request->input('tahun', now()->year);
+
+        $pegawai = User::with('unitkerja')
+            ->where('nik', $nik)
+            ->firstOrFail();
+
+        $awal = Carbon::create($tahun, $bulan, 1)->startOfDay();
+        $akhir = $awal->copy()->endOfMonth();
+
+        // Ambil jadwal selama periode
+        $jadwalCollection = Jadwal::where('pegawai_nik', $nik)
+            ->whereBetween('tgl', [$awal, $akhir])
+            ->get()
+            ->keyBy(function ($item) {
+                return Carbon::parse($item->tgl)->format('Y-m-d');
+            });
+
+        // Ambil kelompok jam berdasarkan shift
+        $shiftNames = $jadwalCollection
+            ->pluck('shift')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $kelompokJam = KelompokJam::whereIn('shift', $shiftNames)
+            ->get()
+            ->keyBy('shift');
+
+        // Ambil presensi
+        $presensiCollection = Presensi::where('nik', $nik)
+            ->whereBetween('tgl_presensi', [
+                $awal->format('Y-m-d'),
+                $akhir->format('Y-m-d')
+            ])
+            ->get()
+            ->groupBy(function ($item) {
+                return Carbon::parse($item->tgl_presensi)->format('Y-m-d');
+            });
+
+        $data = [];
+        $totalHadir = 0;
+
+        $cursor = $awal->copy();
+
+        while ($cursor->lte($akhir)) {
+
+            $tgl = $cursor->format('Y-m-d');
+
+            $jadwalRow = $jadwalCollection->get($tgl);
+            $shift = $jadwalRow->shift ?? null;
+
+            $jam = $shift
+                ? $kelompokJam->get($shift)
+                : null;
+
+            $absensiHari = $presensiCollection->get($tgl) ?? collect();
+
+            // Presensi masuk dan pulang
+            $jamMasuk = optional(
+                $absensiHari->firstWhere('inoutmode', 1)
+            )->jam_in;
+
+            $jamKeluar = optional(
+                $absensiHari->firstWhere('inoutmode', 2)
+            )->jam_in;
+
+            // Jam kerja aktual
+            $totalJamKerja = '00:00';
+
+            if ($jamMasuk && $jamKeluar) {
+
+                $inDt = Carbon::parse("$tgl $jamMasuk");
+                $outDt = Carbon::parse("$tgl $jamKeluar");
+
+                // Jika pulang melewati tengah malam
+                if ($outDt->lt($inDt)) {
+                    $outDt->addDay();
+                }
+
+                $totalJamKerja = $this->secondsToHourMinute(
+                    $inDt->diffInSeconds($outDt)
+                );
+
+                $totalHadir++;
+            }
+
+            /*
+            * Datang terlambat
+            */
+            $terlambat = '00:00';
+
+            $jamMasukShift = $jam
+                ? $jam->jamMasukForDate($tgl)
+                : null;
+
+            if (
+                $jamMasukShift &&
+                $jamMasuk &&
+                strtolower((string) $shift) !== 'libur'
+            ) {
+
+                $shiftStart = Carbon::parse("$tgl $jamMasukShift");
+                $inDt = Carbon::parse("$tgl $jamMasuk");
+
+                if ($inDt->gt($shiftStart)) {
+
+                    $selisih = $shiftStart->diffInSeconds($inDt);
+
+                    if (KelompokJam::isLateBySeconds($selisih)) {
+                        $terlambat = $this->secondsToHourMinute($selisih);
+                    }
+                }
+            }
+
+            /*
+            * Pulang cepat
+            *
+            * Catatan: bagian ini membutuhkan jam pulang dari data KelompokJam.
+            * Sesuaikan nama field/method jika struktur model berbeda.
+            */
+            $pulangCepat = '00:00';
+
+            // Contoh jika tersedia jam pulang:
+            $jamPulangShift = $jam->jam_pulang ?? null;
+
+            if ($jamPulangShift && $jamKeluar) {
+
+                $shiftEnd = Carbon::parse("$tgl $jamPulangShift");
+                $outDt = Carbon::parse("$tgl $jamKeluar");
+
+                if ($outDt->lt($shiftEnd)) {
+
+                    $selisih = $outDt->diffInSeconds($shiftEnd);
+
+                    $pulangCepat = $this->secondsToHourMinute($selisih);
+                }
+            }
+
+            /*
+            * Kurang jam kerja
+            * Misalnya dibandingkan standar 5 jam.
+            * Sebaiknya nanti disesuaikan dengan aturan shift Anda.
+            */
+            $kurangJam = '00:00';
+
+            if ($jamMasuk && $jamKeluar) {
+
+                $inDt = Carbon::parse("$tgl $jamMasuk");
+                $outDt = Carbon::parse("$tgl $jamKeluar");
+
+                if ($outDt->lt($inDt)) {
+                    $outDt->addDay();
+                }
+
+                $aktualSeconds = $inDt->diffInSeconds($outDt);
+
+                // Contoh target 5 jam
+                $targetSeconds = 5 * 3600;
+
+                if ($aktualSeconds < $targetSeconds) {
+                    $kurangJam = $this->secondsToHourMinute(
+                        $targetSeconds - $aktualSeconds
+                    );
+                }
+            }
+
+            /*
+            * Tidak absen
+            */
+            $tidakAbsen = 0;
+
+            if (
+                $shift &&
+                strtolower((string) $shift) !== 'libur' &&
+                !$jamMasuk &&
+                !$jamKeluar
+            ) {
+                $tidakAbsen = 1;
+            }
+
+            // Jika tidak ada jadwal, Minggu dianggap libur
+            $tipe = $shift ?? ($cursor->isSunday() ? 'L' : '-');
+
+            $data[] = [
+                'tanggal' => $tgl,
+                'hari' => $cursor->translatedFormat('l'),
+                'tipe' => $tipe,
+                'jam_masuk' => $jamMasuk
+                    ? Carbon::parse($tgl)->format('d M Y') . ' ' . $jamMasuk
+                    : '-',
+                'jam_keluar' => $jamKeluar
+                    ? Carbon::parse($tgl)->format('d M Y') . ' ' . $jamKeluar
+                    : '-',
+                'total_jam_kerja' => $totalJamKerja,
+                'kurang_jam' => $kurangJam,
+                'datang_telat' => $terlambat,
+                'pulang_cepat' => $pulangCepat,
+                'tidak_absen' => $tidakAbsen,
+            ];
+
+            $cursor->addDay();
+        }
+
+        return view(
+            'hris.laporan.detail_rekap_absensi',
+            compact(
+                'pegawai',
+                'bulan',
+                'tahun',
+                'awal',
+                'akhir',
+                'data',
+                'totalHadir'
+            )
+        );
+    }
 
 }

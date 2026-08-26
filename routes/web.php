@@ -263,6 +263,10 @@ Route::prefix('hris')->middleware(['auth', 'verified', 'check.project', 'role:su
     Route::get('laporan/rekap-absensi', [LaporanController::class, 'rekapAbsensi'])->name('hris.laporan.rekap_absensi');
     Route::get('laporan/rekap-absensi/data', [LaporanController::class, 'rekapAbsensiData'])->name('hris.laporan.rekap_absensi.data');
     Route::post('laporan/rekap-absensi/export-payroll', [LaporanController::class, 'exportPayroll'])->name('hris.laporan.rekap_absensi.export_payroll');
+    Route::get('laporan/rekap-absensi/{nik}/detail', [LaporanController::class, 'detailRekapAbsensi'])
+    ->name('hris.laporan.rekap_absensi.detail');
+
+
     // Laporan Payroll
     Route::get('laporan/payroll', [LaporanController::class, 'laporanPayroll'])->name('hris.laporan.payroll');
     Route::get('laporan/payroll/data', [LaporanController::class, 'laporanPayrollData'])->name('hris.laporan.payroll.data');

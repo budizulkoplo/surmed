@@ -84,11 +84,30 @@
                     },
                     columns: [
                         { data: null, render: (data, type, row, meta) => meta.row + 1 },
-                        { 
-                            data: null, 
-                            render: (data) => `
-                                <strong>${data.nama}</strong>
-                            `
+                        {
+                            data: null,
+                            render: (data) => {
+
+                                const bulan = $('#bulan').val();
+                                const tahun = $('#tahun').val();
+
+                                const url = "{{ url('hris/laporan/rekap-absensi') }}/" 
+                                            + data.nik 
+                                            + "/detail?bulan=" + bulan 
+                                            + "&tahun=" + tahun;
+
+                                return `
+                                    <div class="d-flex justify-content-between align-items-center gap-2">
+                                        <strong>${data.nama}</strong>
+
+                                        <a href="${url}" 
+                                        class="btn btn-primary btn-sm"
+                                        title="Lihat Detail Absensi">
+                                            <i class="bi bi-eye"></i> Detail
+                                        </a>
+                                    </div>
+                                `;
+                            }
                         },
                         { data: 'hari_kerja', className: 'text-center' },
                         { data: 'jml_absensi', className: 'text-center' },
