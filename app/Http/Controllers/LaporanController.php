@@ -628,12 +628,8 @@ class LaporanController extends Controller
                 'tanggal' => $tgl,
                 'hari' => $cursor->translatedFormat('l'),
                 'tipe' => $tipe,
-                'jam_masuk' => $jamMasuk
-                    ? Carbon::parse($tgl)->format('d M Y') . ' ' . $jamMasuk
-                    : '-',
-                'jam_keluar' => $jamKeluar
-                    ? Carbon::parse($tgl)->format('d M Y') . ' ' . $jamKeluar
-                    : '-',
+                'jam_masuk' => $jamMasuk ? substr($jamMasuk, 0, 5) : '-',
+                'jam_keluar' => $jamKeluar ? substr($jamKeluar, 0, 5) : '-',
                 'total_jam_kerja' => $totalJamKerja,
                 'kurang_jam' => $kurangJam,
                 'datang_telat' => $terlambat,
