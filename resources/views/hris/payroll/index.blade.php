@@ -5,7 +5,11 @@
         <div class="container-fluid d-flex justify-content-between align-items-center">
             <h3 class="mb-0"><i class="bi bi-cash-stack"></i> Payroll Pegawai</h3>
             <div class="text-muted small">
-                Periode: <span id="periode-text">{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</span>
+                @php
+                    $periodeAkhir = \Carbon\Carbon::now()->day(25);
+                    $periodeAwal = $periodeAkhir->copy()->subMonthNoOverflow()->day(26);
+                @endphp
+                Periode: <span id="periode-text">{{ $periodeAwal->translatedFormat('d M Y') }} - {{ $periodeAkhir->translatedFormat('d M Y') }}</span>
             </div>
         </div>
     </div>
@@ -138,7 +142,9 @@
 
         $('#btnTampil').click(function(){
             let bulan=$('#bulan').val(), tahun=$('#tahun').val();
-            $('#periode-text').text($('#bulan option:selected').text()+' '+tahun);
+            let akhir = new Date(Number(tahun), Number(bulan) - 1, 25);
+            let awal = new Date(Number(tahun), Number(bulan) - 2, 26);
+            $('#periode-text').text(awal.toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'}) + ' - ' + akhir.toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'}));
             $.get("{{ route('hris.payroll.data') }}",{bulan,tahun},function(res){
                 let rows='';
                 res.data.forEach((r,i)=>{

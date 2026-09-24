@@ -45,7 +45,7 @@
     <div class="todaypresence">
         <div class="rekappresensi">
             <h3 class="section-title">
-                Rekap Presensi Bulan {{ $namabulan[$bulanini] ?? 'Bulan' }} Tahun {{ $tahunini ?? date('Y') }}
+                Rekap Presensi {{ $periodeAwal->translatedFormat('d M Y') }} s/d {{ $periodeAkhir->translatedFormat('d M Y') }}
             </h3>
 
             <div class="row text-center">

@@ -24,11 +24,9 @@ class AbsensiController extends Controller
         $tahun = $request->input('tahun', now()->format('Y'));
 
         try {
-            $awal = Carbon::createFromDate($tahun, $bulan, 1)->startOfDay();
-            $akhir = $awal->copy()->endOfMonth();
+            [$awal, $akhir] = $this->attendancePeriod((int) $bulan, (int) $tahun);
         } catch (\Exception $e) {
-            $awal = now()->startOfMonth();
-            $akhir = now()->endOfMonth();
+            [$awal, $akhir] = $this->currentAttendancePeriod();
         }
 
         $karyawan = User::with('unitkerja')->get();

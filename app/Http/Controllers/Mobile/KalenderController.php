@@ -195,8 +195,10 @@ class KalenderController extends BaseMobileController
             ];
         }
 
-        $start_date = Carbon::parse("$bulan-01")->startOfDay();
-        $end_date   = Carbon::parse($bulan)->endOfMonth()->endOfDay();
+        [$start_date, $end_date] = $this->attendancePeriod(
+            (int) Carbon::parse($bulan . '-01')->format('m'),
+            (int) Carbon::parse($bulan . '-01')->format('Y')
+        );
 
         $jadwalCollection = DB::table('jadwal')
             ->where('pegawai_nik', $this->pegawaiNik)
@@ -354,20 +356,29 @@ class KalenderController extends BaseMobileController
             $cursor->addDay();
         }
 
+        $holidays = $this->getNationalHolidays($bulan);
+        $endMonth = $end_date->format('Y-m');
+        if ($endMonth !== $bulan) {
+            $holidays = array_merge($holidays, $this->getNationalHolidays($endMonth));
+        }
+        $holidays = array_filter($holidays, function ($date) use ($start_date, $end_date) {
+            return Carbon::parse($date)->betweenIncluded($start_date, $end_date);
+        }, ARRAY_FILTER_USE_KEY);
+
         return [
             'dataKalender' => $dataKalender,
-            'weeks'        => $this->generateCalendarWeeks($bulan),
-            'liburNasional'=> $this->getNationalHolidays($bulan),
-            'liburBulanIni'=> $this->filterHolidaysByMonth($bulan),
+            'weeks'        => $this->generateCalendarWeeks($start_date, $end_date),
+            'liburNasional'=> $holidays,
+            'liburBulanIni'=> $holidays,
             'stats'        => $stats,
         ];
     }
 
     // === Generate Calendar Weeks ===
-    protected function generateCalendarWeeks(string $bulan): array
+    protected function generateCalendarWeeks(Carbon $startDate, Carbon $endDate): array
     {
-        $start = Carbon::parse($bulan . '-01')->startOfWeek();
-        $end   = Carbon::parse($bulan)->endOfMonth()->endOfWeek();
+        $start = $startDate->copy()->startOfWeek();
+        $end   = $endDate->copy()->endOfWeek();
 
         $weeks = [];
         $currentWeek = [];

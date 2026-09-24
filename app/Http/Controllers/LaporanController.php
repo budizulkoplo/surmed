@@ -155,7 +155,7 @@ class LaporanController extends Controller
     public function exportPayroll(Request $request)
     {
         [$awal, $akhir] = $this->resolveRekapDateRange($request);
-        $periode = $awal->format('Y-m');
+        $periode = $akhir->format('Y-m');
 
         // Ambil data rekap absensi
         $rekapData = $this->rekapAbsensiData($request)->getData()->data;
@@ -310,7 +310,13 @@ class LaporanController extends Controller
     {
         $bulan = now()->format('m');
         $tahun = now()->format('Y');
-        return view('hris.laporan.laporan_payroll', compact('bulan', 'tahun'));
+        [$tglAwal, $tglAkhir] = $this->attendancePeriod((int) $bulan, (int) $tahun);
+        return view('hris.laporan.laporan_payroll', [
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'tglAwal' => $tglAwal,
+            'tglAkhir' => $tglAkhir,
+        ]);
     }
 
     public function laporanPayrollData(Request $request)
@@ -457,19 +463,18 @@ class LaporanController extends Controller
 
     private function resolveRekapDateRange(Request $request): array
     {
-        $defaultAwal = now()->copy()->startOfMonth();
-        $defaultAkhir = now()->copy()->endOfMonth();
+        [$defaultAwal, $defaultAkhir] = $this->currentAttendancePeriod();
 
         $tglAwal = $request->input('tgl_awal');
         $tglAkhir = $request->input('tgl_akhir');
 
         if (!$tglAwal && $request->filled('bulan') && $request->filled('tahun')) {
-            $tglAwal = Carbon::createFromDate(
-                (int) $request->input('tahun'),
+            [$periodAwal, $periodAkhir] = $this->attendancePeriod(
                 (int) $request->input('bulan'),
-                1
-            )->toDateString();
-            $tglAkhir = Carbon::parse($tglAwal)->endOfMonth()->toDateString();
+                (int) $request->input('tahun')
+            );
+            $tglAwal = $periodAwal->toDateString();
+            $tglAkhir = $periodAkhir->toDateString();
         }
 
         $awal = $tglAwal ? Carbon::parse($tglAwal)->startOfDay() : $defaultAwal->copy()->startOfDay();

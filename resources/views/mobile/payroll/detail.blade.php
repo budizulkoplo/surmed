@@ -19,7 +19,11 @@
             <img src="{{ asset($setting->path_logo) }}" alt="Logo" style="height:50px;">
         @endif
         <h6 class="mt-2 mb-0">{{ $setting->nama_perusahaan }}</h6>
-        <small class="text-muted">Slip Gaji - {{ \Carbon\Carbon::createFromFormat('Y-m', $periode)->translatedFormat('F Y') }}</small>
+        @php
+            $periodeAkhir = \Carbon\Carbon::createFromFormat('Y-m', $periode)->day(25);
+            $periodeAwal = $periodeAkhir->copy()->subMonthNoOverflow()->day(26);
+        @endphp
+        <small class="text-muted">Slip Gaji - {{ $periodeAwal->translatedFormat('d M Y') }} - {{ $periodeAkhir->translatedFormat('d M Y') }}</small>
     </div>
 
     <div class="mb-3">

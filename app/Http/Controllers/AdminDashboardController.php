@@ -17,6 +17,7 @@ class AdminDashboardController extends Controller
         $today = Carbon::now();
         $bulan = $today->month;
         $tahun = $today->year;
+        [$awal, $akhir] = $this->attendancePeriod($bulan, $tahun);
 
         // ==============================
         // INFORMASI LAYANAN
@@ -73,16 +74,15 @@ if ($latestTagihan) {
 
 
         // ambil semua izin bulan ini
-        $izinBulanIni = PengajuanIzin::whereYear('tgl_izin', $tahun)
-            ->whereMonth('tgl_izin', $bulan)
+        $izinBulanIni = PengajuanIzin::whereBetween('tgl_izin', [$awal->toDateString(), $akhir->toDateString()])
             ->where('status_approved', 1)
             ->get()
             ->groupBy('nik');
 
         // ambil semua jadwal bulan ini
         $jadwalBulanIni = Jadwal::whereBetween('tgl', [
-                Carbon::createFromDate($tahun, $bulan, 1)->toDateString(),
-                Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth()->toDateString()
+            $awal->toDateString(),
+            $akhir->toDateString()
             ])
             ->get()
             ->groupBy('pegawai_nik');
@@ -92,16 +92,13 @@ if ($latestTagihan) {
 
         foreach ($pegawaiAktif as $pegawai) {
             $totalTerlambat = 0;
-            $awal = Carbon::createFromDate($tahun, $bulan, 1);
-            $akhir = $awal->copy()->endOfMonth();
             $cursor = $awal->copy();
 
             $jadwalPegawai = $jadwalBulanIni->get($pegawai->nik) ?? collect();
             $jadwalPegawaiByDate = $jadwalPegawai->keyBy('tgl');
 
             $presensiPegawai = Presensi::where('nik', $pegawai->nik)
-                ->whereYear('tgl_presensi', $tahun)
-                ->whereMonth('tgl_presensi', $bulan)
+                ->whereBetween('tgl_presensi', [$awal->toDateString(), $akhir->toDateString()])
                 ->get()
                 ->groupBy('tgl_presensi');
 
@@ -162,8 +159,7 @@ if ($latestTagihan) {
         // ==============================
         // Ringkasan kehadiran
         // ==============================
-        $totalHadir = Presensi::whereYear('tgl_presensi', $tahun)
-            ->whereMonth('tgl_presensi', $bulan)
+        $totalHadir = Presensi::whereBetween('tgl_presensi', [$awal->toDateString(), $akhir->toDateString()])
             ->distinct('nik')
             ->count('nik');
 
@@ -174,8 +170,7 @@ if ($latestTagihan) {
         // ==============================
         // Total izin bulan ini
         // ==============================
-        $totalIzin = \App\Models\PengajuanIzin::whereYear('tgl_izin', $tahun)
-            ->whereMonth('tgl_izin', $bulan)
+        $totalIzin = \App\Models\PengajuanIzin::whereBetween('tgl_izin', [$awal->toDateString(), $akhir->toDateString()])
             ->where('status_approved', 1)
             ->count();
 
@@ -187,7 +182,9 @@ if ($latestTagihan) {
             'data_per_pegawai' => $dataPegawai,
             'nama_klinik' => 'Klinik Surya Medika',
             'bulan' => $bulan,
-            'tahun' => $tahun
+            'tahun' => $tahun,
+            'periode_awal' => $awal->toDateString(),
+            'periode_akhir' => $akhir->toDateString(),
         ];
 
         return view('dashboard', compact('informasiLayanan', 'ringkasanAbsensi'));

@@ -8,6 +8,9 @@
                     <h3 class="mb-0"><i class="bi bi-cash-stack"></i> Laporan Payroll</h3>
                 </div>
                 <div class="col-sm-6 text-end">
+                    <div class="small text-muted mb-1">
+                        Periode: {{ $tglAwal->translatedFormat('d M Y') }} - {{ $tglAkhir->translatedFormat('d M Y') }}
+                    </div>
                     <div class="d-flex justify-content-end gap-2">
                         <select id="bulan" class="form-select form-select-sm w-auto" onchange="reloadTable()">
                             @for($m=1;$m<=12;$m++)

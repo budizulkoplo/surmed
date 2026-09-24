@@ -66,7 +66,11 @@
            <img src="{{ public_path('/'.$setting->path_logo) }}" alt="Logo" width="65"><br><br>
         @endif
         <strong>{{ $setting->nama_perusahaan }}</strong><br>
-        Slip Gaji - {{ \Carbon\Carbon::createFromFormat('Y-m', $periode)->translatedFormat('F Y') }}
+        @php
+            $periodeAkhir = \Carbon\Carbon::createFromFormat('Y-m', $periode)->day(25);
+            $periodeAwal = $periodeAkhir->copy()->subMonthNoOverflow()->day(26);
+        @endphp
+        Slip Gaji - {{ $periodeAwal->translatedFormat('d M Y') }} - {{ $periodeAkhir->translatedFormat('d M Y') }}
     </div>
 
     {{-- Identitas Pegawai --}}

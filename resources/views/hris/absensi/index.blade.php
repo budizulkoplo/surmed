@@ -14,7 +14,7 @@
             <div class="card card-info card-outline mb-3">
                 <div class="card-body row g-2 align-items-end">
                     <div class="col-md-2">
-                        <label>Bulan</label>
+                        <label>Bulan Periode</label>
                         <select id="bulan" class="form-select form-select-sm">
                             @for($m=1;$m<=12;$m++)
                                 <option value="{{ $m }}" {{ $m==date('n')?'selected':'' }}>
@@ -35,6 +35,9 @@
                         <button id="btnTampil" class="btn btn-sm btn-primary">
                             <i class="bi bi-search"></i> Tampilkan
                         </button>
+                    </div>
+                    <div class="col-md-5 small text-muted">
+                        Periode berjalan: tanggal 26 bulan sebelumnya sampai tanggal 25 bulan terpilih.
                     </div>
                 </div>
             </div>

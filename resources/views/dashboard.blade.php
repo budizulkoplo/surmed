@@ -4,11 +4,8 @@
     <div class="app-content">
         <div class="container-fluid my-4">
             @php
-                $periode = \Carbon\Carbon::create(
-                    $ringkasanAbsensi['tahun'] ?? now()->year, 
-                    $ringkasanAbsensi['bulan'] ?? now()->month, 
-                    1
-                )->translatedFormat('F Y');
+                $periodeAwal = \Carbon\Carbon::parse($ringkasanAbsensi['periode_awal'] ?? now()->startOfMonth());
+                $periodeAkhir = \Carbon\Carbon::parse($ringkasanAbsensi['periode_akhir'] ?? now()->endOfMonth());
             @endphp
 
             <!-- Header dengan Periode -->
@@ -18,7 +15,7 @@
                         <h1 class="dashboard-title">
                             <i class="nav-icon bi bi-people"></i> Dashboard HRIS
                         </h1>
-                        <p class="text-muted mb-0">Periode: {{ $periode }}</p>
+                        <p class="text-muted mb-0">Periode: {{ $periodeAwal->translatedFormat('d F Y') }} s/d {{ $periodeAkhir->translatedFormat('d F Y') }}</p>
                     </div>
                     
                 </div>

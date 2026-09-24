@@ -25,8 +25,7 @@ class DashboardController extends Controller
         $nik = $user->nik;
 
         // Ambil data jadwal untuk bulan ini sekaligus
-        $startDate = Carbon::create($tahunIni, $bulanIni, 1)->startOfMonth();
-        $endDate = Carbon::create($tahunIni, $bulanIni, 1)->endOfMonth();
+        [$startDate, $endDate] = $this->attendancePeriod($bulanIni, $tahunIni);
 
         $jadwalBulanIni = DB::table('jadwal')
             ->where('pegawai_nik', $nik)
@@ -48,8 +47,7 @@ class DashboardController extends Controller
         // Presensi bulan ini: group by tanggal dengan informasi shift
         $presensiBulanIni = DB::table('presensi')
             ->where('nik', $nik)
-            ->whereMonth('tgl_presensi', $bulanIni)
-            ->whereYear('tgl_presensi', $tahunIni)
+            ->whereBetween('tgl_presensi', [$startDate->toDateString(), $endDate->toDateString()])
             ->orderBy('tgl_presensi')
             ->get()
             ->groupBy('tgl_presensi')
@@ -82,8 +80,7 @@ class DashboardController extends Controller
         $rekapIzin = DB::table('pengajuan_izin')
             ->selectRaw('SUM(IF(status="i",1,0)) as jmlizin, SUM(IF(status="s",1,0)) as jmlsakit')
             ->where('nik', $nik)
-            ->whereMonth('tgl_izin', $bulanIni)
-            ->whereYear('tgl_izin', $tahunIni)
+            ->whereBetween('tgl_izin', [$startDate->toDateString(), $endDate->toDateString()])
             ->where('status_approved', 1)
             ->first();
 
@@ -160,7 +157,9 @@ class DashboardController extends Controller
             'leaderboard' => $leaderboard,
             'namabulan' => $namaBulan,
             'bulanini' => $bulanIni,
-            'tahunini' => $tahunIni
+            'tahunini' => $tahunIni,
+            'periodeAwal' => $startDate,
+            'periodeAkhir' => $endDate,
         ]);
     }
 
@@ -169,8 +168,7 @@ class DashboardController extends Controller
      */
     protected function calculateRekapPresensi(string $nik, int $bulan, int $tahun)
     {
-        $startDate = Carbon::create($tahun, $bulan, 1)->startOfMonth();
-        $endDate = Carbon::create($tahun, $bulan, 1)->endOfMonth();
+        [$startDate, $endDate] = $this->attendancePeriod($bulan, $tahun);
 
         // Ambil data jadwal untuk bulan ini
         $jadwalCollection = DB::table('jadwal')
